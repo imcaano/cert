@@ -1,0 +1,83 @@
+[
+    {
+      "inputs": [
+        {
+          "internalType": "string",
+          "name": "",
+          "type": "string"
+        }
+      ],
+      "name": "certificates",
+      "outputs": [
+        {
+          "internalType": "string",
+          "name": "studentName",
+          "type": "string"
+        },
+        {
+          "internalType": "string",
+          "name": "certHash",
+          "type": "string"
+        },
+        {
+          "internalType": "uint256",
+          "name": "timestamp",
+          "type": "uint256"
+        }
+      ],
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "string",
+          "name": "certId",
+          "type": "string"
+        },
+        {
+          "internalType": "string",
+          "name": "studentName",
+          "type": "string"
+        },
+        {
+          "internalType": "string",
+          "name": "certHash",
+          "type": "string"
+        }
+      ],
+      "name": "issueCertificate",
+      "outputs": [],
+      "stateMutability": "nonpayable",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "string",
+          "name": "certId",
+          "type": "string"
+        }
+      ],
+      "name": "verifyCertificate",
+      "outputs": [
+        {
+          "internalType": "string",
+          "name": "",
+          "type": "string"
+        },
+        {
+          "internalType": "string",
+          "name": "",
+          "type": "string"
+        },
+        {
+          "internalType": "uint256",
+          "name": "",
+          "type": "uint256"
+        }
+      ],
+      "stateMutability": "view",
+      "type": "function"
+    }
+] 

@@ -1,0 +1,1 @@
+// deploy.js placeholder for deploying CertificateRegistry.sol to Ganache 
