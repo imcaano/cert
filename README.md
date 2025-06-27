@@ -1,44 +1,130 @@
-# CertChain: Blockchain-Based System for Secure Online Exam Certification and Identity Authentication
+# CertChain: Blockchain-Based Certification System
 
-## Project Structure
+Complete blockchain-based system for secure online exam certification using PHP, Bootstrap, MySQL, and Ethereum.
 
+## 🚀 Features
+- Student/Admin portals with MetaMask authentication
+- Public certificate verification
+- Blockchain-stored certificate hashes
+- Modern Bootstrap UI
+- Secure exam system
+
+## 📋 Prerequisites
+- XAMPP (Apache + MySQL + PHP)
+- Node.js (v16+)
+- Ganache (Local Ethereum blockchain)
+- MetaMask (Browser extension)
+
+## 🏗️ Installation
+
+### Step 1: Database Setup
+1. Start XAMPP (Apache + MySQL)
+2. Open phpMyAdmin: `http://localhost/phpmyadmin`
+3. Create database: `certchain`
+4. Import `db.sql`
+
+### Step 2: Blockchain Setup
+```bash
+# Install dependencies
+cd C:\xampp\htdocs\cert
+npm install --save-dev hardhat @nomicfoundation/hardhat-toolbox
+cd blockchain && npm install ethers
+
+# Deploy contract
+npx hardhat run scripts/deploy.js --network ganache
+# Save the contract address output!
+```
+
+### Step 3: Configure Blockchain
+Edit `blockchain/store_hash.js`:
+```javascript
+const privateKey = 'YOUR_GANACHE_PRIVATE_KEY';
+const contractAddress = '0x1234567890abcdef...'; // From deployment
+```
+
+### Step 4: MetaMask Setup
+1. Install MetaMask extension
+2. Add Ganache network:
+   - Network Name: `Ganache`
+   - RPC URL: `http://127.0.0.1:7545`
+   - Chain ID: `1337`
+3. Import account from Ganache
+
+### Step 5: Create Admin
+```sql
+INSERT INTO users (username, email, ethereum_address, role, password_hash, created_at) 
+VALUES ('admin', 'admin@example.com', 'YOUR_ETHEREUM_ADDRESS', 'admin', 'admin123', NOW());
+```
+
+## 🚀 Running the System
+
+### Start Services
+1. Start XAMPP (Apache + MySQL)
+2. Start Ganache
+3. Ensure MetaMask connected to Ganache
+
+### Access URLs
+- Frontend: `http://localhost/cert/`
+- Login: `http://localhost/cert/login.php`
+- Register: `http://localhost/cert/register.php`
+- Verify: `http://localhost/cert/frontend/verify.php`
+
+## 🔧 Blockchain Commands
+
+### Store Certificate Hash
+```bash
+cd C:\xampp\htdocs\cert
+node blockchain/store_hash.js <certId> <studentName> <certHash>
+
+# Example:
+node blockchain/store_hash.js CERT123 "John Doe" 0xabc123def456...
+```
+
+### Deploy Contract
+```bash
+npx hardhat run scripts/deploy.js --network ganache
+```
+
+## 🐛 Troubleshooting
+
+### Common Issues
+1. **"network does not support ENS"**: Check contract address in `store_hash.js`
+2. **MetaMask issues**: Verify Ganache network settings
+3. **Database errors**: Check XAMPP and database credentials
+4. **Contract deployment failed**: Verify Ganache running and private key
+
+### Debug Commands
+```bash
+# Check Ganache
+curl http://127.0.0.1:7545
+
+# Check Node.js
+node --version
+
+# Compile contracts
+npx hardhat compile
+```
+
+## 📁 Project Structure
 ```
 cert/
-│
-├── frontend/
-│   ├── index.php           # Landing page
-│   ├── login.php           # Login page (students/admins)
-│   ├── register.php        # Signup page (students/admins)
-│   ├── verify.php          # Public certificate verification (no login)
-│   ├── student_dashboard.php
-│   ├── admin_dashboard.php
-│   └── assets/             # CSS, JS, images, etc.
-│
-├── backend/
-│   ├── db.php              # Database connection
-│   ├── login_process.php   # Login logic
-│   ├── register_process.php# Registration logic
-│   ├── verify_process.php  # Certificate verification logic
-│   └── ...                 # Other backend scripts
-│
-└── README.md
+├── frontend/          # Landing, login, register, verify pages
+├── backend/           # PHP backend logic
+├── blockchain/        # Smart contracts and Node.js scripts
+├── contracts/         # Solidity contracts
+├── scripts/           # Deployment scripts
+├── config.php         # Database config
+├── db.sql            # Database schema
+└── README.md         # This file
 ```
 
-## Features
-- Student and Admin login/registration
-- Public certificate verification (no login required)
-- Separate dashboards for students and admins
-- Modern Bootstrap UI
-- Ready for blockchain and exam/certificate features 
+## 🔒 Security Features
+- MetaMask authentication
+- Blockchain certificate verification
+- Admin-only blockchain writes
+- Secure PHP sessions
+- SQL injection protection
 
-## Blockchain Integration
-- When a certificate is generated, its hash is stored in the database and can be sent to the blockchain smart contract.
-- To store a hash on the blockchain, run:
+---
 
-```
-node blockchain/store_hash.js <certId> <studentName> <certHash>
-```
-
-## Certificate Verification
-- Public users can verify certificates by entering the Certificate ID on the verification page.
-- The system checks the hash and displays if the certificate is valid or invalid. 
+**Ready to use! 🚀** 
