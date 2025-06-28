@@ -1,3 +1,31 @@
+<?php
+require_once '../config.php';
+
+$certificate = null;
+$error_message = '';
+$search_value = '';
+
+if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+    $search_value = trim($_POST['cert_id']);
+    if (!empty($search_value)) {
+        // Try by cert_id first
+        $stmt = $pdo->prepare("SELECT r.*, u.username as student_name, u.ethereum_address as metamask_address, e.title as subject_name, e.total_marks FROM results r JOIN users u ON r.user_id = u.id JOIN exams e ON r.exam_id = e.id WHERE r.cert_id = ?");
+        $stmt->execute([$search_value]);
+        $certificate = $stmt->fetch();
+        if (!$certificate) {
+            // Try by certificate_hash
+            $stmt = $pdo->prepare("SELECT r.*, u.username as student_name, u.ethereum_address as metamask_address, e.title as subject_name, e.total_marks FROM results r JOIN users u ON r.user_id = u.id JOIN exams e ON r.exam_id = e.id WHERE r.certificate_hash = ?");
+            $stmt->execute([$search_value]);
+            $certificate = $stmt->fetch();
+        }
+        if (!$certificate) {
+            $error_message = 'Certificate not found. Please check the Certificate ID or Blockchain Hash.';
+        }
+    } else {
+        $error_message = 'Please enter a Certificate ID or Blockchain Hash.';
+    }
+}
+?>
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -123,6 +151,39 @@
             color: #6366f1;
             margin-bottom: 10px;
         }
+        .certificate-details {
+            background: #f8f9fa;
+            border-radius: 15px;
+            padding: 30px;
+            margin-top: 30px;
+            box-shadow: 0 2px 10px rgba(102,126,234,0.07);
+        }
+        .certificate-id {
+            font-family: 'Courier New', monospace;
+            font-size: 1.1rem;
+            color: #495057;
+            background: #e9ecef;
+            border-radius: 8px;
+            padding: 8px 12px;
+            margin-bottom: 15px;
+            display: inline-block;
+        }
+        .not-found {
+            color: #dc3545;
+            font-weight: 600;
+            text-align: center;
+            margin-top: 20px;
+        }
+        .verified-badge {
+            display: inline-block;
+            background: linear-gradient(135deg, #28a745 0%, #20c997 100%);
+            color: #fff;
+            border-radius: 8px;
+            padding: 6px 18px;
+            font-weight: 600;
+            margin-bottom: 18px;
+            font-size: 1.1rem;
+        }
     </style>
 </head>
 <body>
@@ -156,17 +217,31 @@
     <div class="text-center mb-3">
       <div class="verify-icon"><i class="bi bi-patch-check"></i></div>
       <h2 class="verify-title mb-2">Verify Certificate</h2>
-      <div class="text-muted mb-3">Enter the Certificate ID to check authenticity</div>
+      <div class="text-muted mb-3">Enter the Certificate ID or Blockchain Hash to check authenticity</div>
     </div>
     <form method="POST">
       <div class="mb-3">
-        <input type="text" class="form-control verify-input" id="cert_id" name="cert_id" placeholder="Certificate ID" required>
+        <input type="text" class="form-control verify-input" id="cert_id" name="cert_id" placeholder="Certificate ID or Blockchain Hash" required value="<?php echo htmlspecialchars($search_value); ?>">
       </div>
       <button type="submit" class="btn verify-btn w-100 mb-2"><i class="bi bi-search me-1"></i>Verify</button>
     </form>
-    <?php if (isset($verified) && $verified !== null): ?>
-      <div class="alert <?= $verified ? 'alert-success' : 'alert-danger' ?> mt-3">
-        <?= htmlspecialchars($message) ?>
+    <?php if ($error_message): ?>
+      <div class="alert alert-danger mt-3 text-center"><?php echo $error_message; ?></div>
+    <?php elseif ($certificate): ?>
+      <div class="certificate-details mt-4">
+        <div class="verified-badge">
+          <i class="bi bi-check-circle me-1"></i>Blockchain Verified
+        </div>
+        <div class="certificate-id">
+          Certificate ID: <?php echo htmlspecialchars($certificate['cert_id']); ?>
+        </div>
+        <div><strong>Student:</strong> <?php echo htmlspecialchars($certificate['student_name']); ?></div>
+        <div><strong>Subject:</strong> <?php echo htmlspecialchars($certificate['subject_name']); ?></div>
+        <div><strong>Marks Obtained:</strong> <?php echo $certificate['score']; ?></div>
+        <div><strong>Total Marks:</strong> <?php echo $certificate['total_marks']; ?></div>
+        <div><strong>Percentage:</strong> <?php echo number_format(($certificate['score'] / $certificate['total_marks']) * 100, 1); ?>%</div>
+        <div><strong>Date Issued:</strong> <?php echo date('F j, Y', strtotime($certificate['date_issued'])); ?></div>
+        <div><strong>Blockchain Hash:</strong> <span style="font-family:monospace; color:#2563eb;"><?php echo $certificate['certificate_hash']; ?></span></div>
       </div>
     <?php endif; ?>
   </div>

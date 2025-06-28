@@ -127,4 +127,8 @@ cert/
 
 ---
 
+<<<<<<< HEAD
 **Ready to use! 🚀** 
+=======
+**Ready to use! 🚀** 
+>>>>>>> 02470bf (full updated)

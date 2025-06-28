@@ -22,11 +22,21 @@ if ($user) {
     $_SESSION['username'] = $user['username'];
     $_SESSION['role'] = $user['role'];
     if ($user['role'] === 'admin') {
-        $redirect = 'admin/dashboard.php';
+        $redirect = '/cert/admin/dashboard.php';
     } else {
-        $redirect = 'user/dashboard.php';
+        // Try to find matching student and set student_id for dashboard compatibility
+        $stmt2 = $pdo->prepare('SELECT id FROM students WHERE metamask_address = ?');
+        $stmt2->execute([$eth_address]);
+        $student = $stmt2->fetch();
+        if ($student) {
+            $_SESSION['student_id'] = $student['id'];
+        }
+        $redirect = '/cert/user/dashboard.php';
     }
+    // Debug log
+    error_log("LOGIN: eth_address={$eth_address}, role={$user['role']}, redirect={$redirect}");
     echo json_encode(['success' => true, 'redirect' => $redirect]);
 } else {
+    error_log("LOGIN FAILED: eth_address={$eth_address} not found");
     echo json_encode(['success' => false, 'message' => 'Ethereum address not registered. Please register first.']);
 } 
