@@ -25,68 +25,72 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     if ($student_id <= 0 || $subject_id <= 0 || $marks < 0 || $total_marks <= 0) {
         $error_message = "Please fill all fields correctly.";
     } else {
-        $average = ($marks / $total_marks) * 100;
-        $passed = ($average >= 50) ? 1 : 0;
-        
-        // Generate unique certificate ID
-        $cert_id = 'CERT-' . strtoupper(uniqid()) . '-' . date('Y');
-        
-        // Generate certificate hash (simplified for demo)
-        $certificate_data = $student_id . $subject_id . $marks . $total_marks . date('Y-m-d');
-        $certificate_hash = hash('sha256', $certificate_data);
-        
-        try {
-            // Get subject details
-            $stmt = $pdo->prepare("SELECT * FROM subjects WHERE id = ?");
-            $stmt->execute([$subject_id]);
-            $subject = $stmt->fetch();
+        if ($marks > $total_marks) {
+            $error_message = "Marks obtained cannot be greater than total marks.";
+        } else {
+            $average = ($marks / $total_marks) * 100;
+            $passed = ($average >= 50) ? 1 : 0;
             
-            if (!$subject) {
-                $error_message = "Subject not found.";
-            } else {
-                // Check if exam exists for this subject, if not create it
-                $stmt = $pdo->prepare("SELECT id FROM exams WHERE title = ?");
-                $stmt->execute([$subject['subject_name']]);
-                $exam = $stmt->fetch();
+            // Generate unique certificate ID
+            $cert_id = 'CERT-' . strtoupper(uniqid()) . '-' . date('Y');
+            
+            // Generate certificate hash (simplified for demo)
+            $certificate_data = $student_id . $subject_id . $marks . $total_marks . date('Y-m-d');
+            $certificate_hash = hash('sha256', $certificate_data);
+            
+            try {
+                // Get subject details
+                $stmt = $pdo->prepare("SELECT * FROM subjects WHERE id = ?");
+                $stmt->execute([$subject_id]);
+                $subject = $stmt->fetch();
                 
-                if (!$exam) {
-                    // Create exam for this subject
-                    $stmt = $pdo->prepare("INSERT INTO exams (title, description, total_marks, duration_minutes) VALUES (?, ?, ?, ?)");
-                    $stmt->execute([$subject['subject_name'], 'Certificate exam for ' . $subject['subject_name'], $total_marks, 60]);
-                    $exam_id = $pdo->lastInsertId();
+                if (!$subject) {
+                    $error_message = "Subject not found.";
                 } else {
-                    $exam_id = $exam['id'];
-                }
-                
-                // Check if certificate already exists for this student and exam
-                $stmt = $pdo->prepare("SELECT id FROM results WHERE user_id = ? AND exam_id = ? AND cert_id IS NOT NULL");
-                $stmt->execute([$student_id, $exam_id]);
-                
-                if ($stmt->fetch()) {
-                    $error_message = "Certificate already exists for this student and subject.";
-                } else {
-                    // Insert or update result (matching actual database schema)
-                    $stmt = $pdo->prepare("
-                        INSERT INTO results (user_id, exam_id, score, total, passed, cert_id, certificate_hash, date_issued) 
-                        VALUES (?, ?, ?, ?, ?, ?, ?, NOW())
-                        ON DUPLICATE KEY UPDATE 
-                        score = VALUES(score), 
-                        total = VALUES(total), 
-                        passed = VALUES(passed), 
-                        cert_id = VALUES(cert_id), 
-                        certificate_hash = VALUES(certificate_hash), 
-                        date_issued = NOW()
-                    ");
-                    $stmt->execute([$student_id, $exam_id, $average, $total_marks, $passed, $cert_id, $certificate_hash]);
+                    // Check if exam exists for this subject, if not create it
+                    $stmt = $pdo->prepare("SELECT id FROM exams WHERE title = ?");
+                    $stmt->execute([$subject['subject_name']]);
+                    $exam = $stmt->fetch();
                     
-                    $success_message = "Certificate generated successfully! Certificate ID: " . $cert_id;
+                    if (!$exam) {
+                        // Create exam for this subject
+                        $stmt = $pdo->prepare("INSERT INTO exams (title, description, total_marks, duration_minutes) VALUES (?, ?, ?, ?)");
+                        $stmt->execute([$subject['subject_name'], 'Certificate exam for ' . $subject['subject_name'], $total_marks, 60]);
+                        $exam_id = $pdo->lastInsertId();
+                    } else {
+                        $exam_id = $exam['id'];
+                    }
                     
-                    // Clear form data
-                    $_POST = array();
+                    // Check if certificate already exists for this student and exam
+                    $stmt = $pdo->prepare("SELECT id FROM results WHERE user_id = ? AND exam_id = ? AND cert_id IS NOT NULL");
+                    $stmt->execute([$student_id, $exam_id]);
+                    
+                    if ($stmt->fetch()) {
+                        $error_message = "Certificate already exists for this student and subject.";
+                    } else {
+                        // Insert or update result (matching actual database schema)
+                        $stmt = $pdo->prepare("
+                            INSERT INTO results (user_id, exam_id, score, total, passed, cert_id, certificate_hash, date_issued) 
+                            VALUES (?, ?, ?, ?, ?, ?, ?, NOW())
+                            ON DUPLICATE KEY UPDATE 
+                            score = VALUES(score), 
+                            total = VALUES(total), 
+                            passed = VALUES(passed), 
+                            cert_id = VALUES(cert_id), 
+                            certificate_hash = VALUES(certificate_hash), 
+                            date_issued = NOW()
+                        ");
+                        $stmt->execute([$student_id, $exam_id, $average, $total_marks, $passed, $cert_id, $certificate_hash]);
+                        
+                        $success_message = "Certificate generated successfully! Certificate ID: " . $cert_id;
+                        
+                        // Clear form data
+                        $_POST = array();
+                    }
                 }
+            } catch (PDOException $e) {
+                $error_message = "Error generating certificate: " . $e->getMessage();
             }
-        } catch (PDOException $e) {
-            $error_message = "Error generating certificate: " . $e->getMessage();
         }
     }
 }
@@ -305,7 +309,7 @@ $prefill_subject_id = isset($_GET['subject_id']) ? (int)$_GET['subject_id'] : 0;
                                     </label>
                                     <input type="number" class="form-control" id="total_marks" name="total_marks" 
                                            value="<?php echo isset($_POST['total_marks']) ? $_POST['total_marks'] : ''; ?>" 
-                                           min="1" max="1000" required>
+                                           min="1" max="1000" required readonly>
                                 </div>
                             </div>
                             
@@ -334,9 +338,17 @@ $prefill_subject_id = isset($_GET['subject_id']) ? (int)$_GET['subject_id'] : 0;
         document.getElementById('subject_id').addEventListener('change', function() {
             const selectedOption = this.options[this.selectedIndex];
             const totalMarks = selectedOption.getAttribute('data-total-marks');
-            
             if (totalMarks) {
                 document.getElementById('total_marks').value = totalMarks;
+                // Also update max for marks obtained
+                document.getElementById('marks').setAttribute('max', totalMarks);
+            }
+        });
+        // Prevent marks obtained > total marks
+        document.getElementById('marks').addEventListener('input', function() {
+            const totalMarks = parseInt(document.getElementById('total_marks').value, 10);
+            if (parseInt(this.value, 10) > totalMarks) {
+                this.value = totalMarks;
             }
         });
     </script>
